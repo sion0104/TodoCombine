@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import Combine
 
 struct AddTodoView: View {
@@ -14,27 +15,31 @@ struct AddTodoView: View {
     
     @StateObject private var todoViewModel = TodoViewModel()
     
-    @State private var title = ""
-    @State private var cancellables = Set<AnyCancellable>()
-    
-    @State private var dueDate = Date()
     @State private var priority: TodoPriority = .medium
     
-
     var body: some View {
         NavigationView {
             Form {
-                Section("Todo information") {
-                    TextField("Enter a TItle", text: $title)
-                        
+                Section(header: Text("Todo Information")) {
+                    TextField("Enter a Title", text: $todoViewModel.title)
                     
-                    DatePicker("Due Date",
-                               selection: $dueDate,
-                               displayedComponents: .date)
+                    if let titleError = todoViewModel.validationErrors.first(where: { $0 == .emptyTitle || $0 == .titleTooLong }) {
+                        Text(titleError.localizedDescription)
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
+                    
+                    DatePicker("Due Date", selection: $todoViewModel.dueDate, displayedComponents: .date)
+                    
+                    if todoViewModel.validationErrors.contains(.pastDueDate) {
+                        Text(ValidationError.pastDueDate.localizedDescription)
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
                     
                     Picker("Priority", selection: $priority) {
                         ForEach(TodoPriority.allCases, id: \.self) { priority in
-                            Text(priority.rawValue).tag(priority)
+                            Text(priority.title).tag(priority)
                         }
                     }
                 }
@@ -42,23 +47,27 @@ struct AddTodoView: View {
             .navigationTitle("New Todo")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
-                leading: Button("Cancle") { dismiss() },
+                leading: Button("Cancel") { dismiss() },
                 trailing: Button("Save") {
                     saveTask()
                 }
+                    .disabled(!todoViewModel.isValid)
             )
         }
     }
-    
+
     private func saveTask() {
-        guard !title.isEmpty else { return }
-        
-        let newTodo = Todo(
-            timestamp: Date(),
-            title: title,
-            dueDate: dueDate,
-            priority: priority.rawValue
-        )
+        todoViewModel.addNewTodo(title: todoViewModel.title, dueDate: todoViewModel.dueDate) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let todo):
+                    modelContext.insert(todo)
+                    dismiss()
+                case .failure(let validationErrors):
+                    todoViewModel.validationErrors = validationErrors.errors
+                }
+            }
+        }
     }
 }
 

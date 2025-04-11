@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-struct ContentView: View {
+struct TodoListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
@@ -18,14 +18,14 @@ struct ContentView: View {
     var body: some View {
         NavigationSplitView {
             List {
-                ForEach(todos) { item in
+                ForEach(todos) { todo in
                     NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
+                        Text("Item at \(todo.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
                     } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+                        Text(todo.title)
                     }
                 }
-                .onDelete(perform: deleteTodos)
+//                .onDelete(perform: deleteTodos)
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -47,24 +47,9 @@ struct ContentView: View {
             Text("Select an item")
         }
     }
-
-    private func addTodo() {
-        withAnimation {
-            let newTodo = Todo(timestamp: Date(), title: "")
-            modelContext.insert(newTodo)
-        }
-    }
-
-    private func deleteTodos(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(todos[index])
-            }
-        }
-    }
 }
 
 #Preview {
-    ContentView()
+    TodoListView()
         .modelContainer(for: Todo.self, inMemory: true)
 }
