@@ -6,12 +6,17 @@
 //
 
 import SwiftUI
+import Combine
 
 struct AddTodoView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
+    @StateObject private var todoViewModel = TodoViewModel()
+    
     @State private var title = ""
+    @State private var cancellables = Set<AnyCancellable>()
+    
     @State private var dueDate = Date()
     @State private var priority: TodoPriority = .medium
     
@@ -50,13 +55,10 @@ struct AddTodoView: View {
         
         let newTodo = Todo(
             timestamp: Date(),
-            title: title
-//            dueDate: dueDate,
-//            priority: priority.rawValue
+            title: title,
+            dueDate: dueDate,
+            priority: priority.rawValue
         )
-        
-        modelContext.insert(newTodo)
-        dismiss()
     }
 }
 
