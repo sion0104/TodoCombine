@@ -10,7 +10,10 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    
     @Query private var todos: [Todo]
+    @State private var isAddingTodo = false
 
     var body: some View {
         NavigationSplitView {
@@ -29,10 +32,16 @@ struct ContentView: View {
                     EditButton()
                 }
                 ToolbarItem {
-                    Button(action: addTodo) {
+                    Button(action: { isAddingTodo = true }) {
                         Label("Add Item", systemImage: "plus")
                     }
                 }
+            }
+            .navigationTitle("Todo")
+            .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: .constant(""), prompt: "Search")
+            .sheet(isPresented: $isAddingTodo) {
+                AddTodoView()
             }
         } detail: {
             Text("Select an item")
@@ -41,7 +50,7 @@ struct ContentView: View {
 
     private func addTodo() {
         withAnimation {
-            let newTodo = Todo(timestamp: Date())
+            let newTodo = Todo(timestamp: Date(), title: "")
             modelContext.insert(newTodo)
         }
     }
